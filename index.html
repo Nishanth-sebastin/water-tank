@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Water Tank Problem</title>
+    <style>
+        .container {
+            margin: 20px;
+        }
+        #visualization {
+            border: 1px solid #ccc;
+            margin-top: 20px;
+            background-color: #f9f9f9;
+        }
+        input {
+            width: 400px;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4c57af;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #4550a0;
+        }
+        #result {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Water Tank Problem</h1>
+        <p>e.g., 0,4,0,0,0,6,0,6,4,0</p>
+        <input type="text" id="inputArray" placeholder="Enter block heights as comma-separated values, ">
+        <button onclick="handleCalculate()">Calculate</button>
+        <div id="result"></div>
+        <svg id="visualization"></svg>
+    </div>
+
+    <script>
+        function calculateWater(heights) {
+            const n = heights.length;
+            if (n === 0) return { total: 0, waterLevels: [] };
+
+            const leftMax = new Array(n);
+            const rightMax = new Array(n);
+
+            leftMax[0] = heights[0];
+            for (let i = 1; i < n; i++) {
+                leftMax[i] = Math.max(leftMax[i - 1], heights[i]);
+            }
+
+            rightMax[n - 1] = heights[n - 1];
+            for (let i = n - 2; i >= 0; i--) {
+                rightMax[i] = Math.max(rightMax[i + 1], heights[i]);
+            }
+
+            const waterLevels = leftMax.map((lm, i) => Math.min(lm, rightMax[i]));
+            const total = waterLevels.reduce((sum, wl, i) => sum + Math.max(0, wl - heights[i]), 0);
+
+            return { total, waterLevels };
+        }
+
+        function drawBlocksAndWater(heights, waterLevels) {
+            const svg = document.getElementById('visualization');
+            svg.innerHTML = '';
+
+            const n = heights.length;
+            if (n === 0) return;
+
+            const maxHeight = Math.max(...heights);
+            if (maxHeight === 0) return;
+
+            const blockWidth = 20;
+            const blockSpacing = 10;
+            const svgHeight = 200;
+            const scalingFactor = svgHeight / maxHeight;
+
+            const svgWidth = n * (blockWidth + blockSpacing) - blockSpacing;
+            svg.setAttribute('width', svgWidth);
+            svg.setAttribute('height', svgHeight);
+
+            heights.forEach((height, i) => {
+                const blockH = height * scalingFactor;
+                const waterH = (waterLevels[i] - height) * scalingFactor;
+
+                // Draw block
+                const blockX = i * (blockWidth + blockSpacing);
+                const blockY = svgHeight - blockH;
+
+                const blockRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                blockRect.setAttribute('x', blockX);
+                blockRect.setAttribute('y', blockY);
+                blockRect.setAttribute('width', blockWidth);
+                blockRect.setAttribute('height', blockH);
+                blockRect.setAttribute('fill', '#666');
+                svg.appendChild(blockRect);
+
+                // Draw water
+                if (waterH > 0) {
+                    const waterY = blockY - waterH;
+                    const waterRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    waterRect.setAttribute('x', blockX);
+                    waterRect.setAttribute('y', waterY);
+                    waterRect.setAttribute('width', blockWidth);
+                    waterRect.setAttribute('height', waterH);
+                    waterRect.setAttribute('fill', '#00f');
+                    svg.appendChild(waterRect);
+                }
+            });
+        }
+
+        function handleCalculate() {
+            const input = document.getElementById('inputArray').value.trim();
+            const heights = input.split(',').map(numStr => Number(numStr.trim()));
+            if (heights.some(isNaN)) {
+                alert('Please enter valid numbers separated by commas.');
+                return;
+            }
+
+            const { total, waterLevels } = calculateWater(heights);
+            document.getElementById('result').textContent = `${total} Units`;
+            drawBlocksAndWater(heights, waterLevels);
+        }
+    </script>
+</body>
+</html>
